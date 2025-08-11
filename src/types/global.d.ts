@@ -5,6 +5,8 @@ export interface IElectronAPI {
   loadLayoutConfig: (filePath: string) => Promise<any>;
   getLastOpenedFile: () => Promise<string | null>;
   getRecentFiles: () => Promise<string[]>;
+  onOpenRecentFile?: (callback: (event: any, filePath: string) => void) => void;
+  onCloseDashboard?: (callback: (event: any) => void) => void;
 }
 
 declare global {

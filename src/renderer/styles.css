@@ -24,6 +24,14 @@ body {
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  min-height: 60px;
+  height: 60px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .header h1 {
@@ -33,9 +41,42 @@ body {
   user-select: none;
 }
 
+.reload-icon {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.reload-icon:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.reload-icon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .controls {
   display: flex;
   gap: 1rem;
+  align-items: center;
+  min-height: 28px;
 }
 
 .controls button {
@@ -60,6 +101,134 @@ body {
 
 .controls button:disabled:hover {
   background-color: #3498db;
+}
+
+/* ファイル操作ボタン（青系） */
+.btn-file {
+  background-color: #3498db !important;
+}
+
+.btn-file:hover {
+  background-color: #2980b9 !important;
+}
+
+/* モード切り替えボタン（緑系） */
+.btn-mode {
+  background-color: #27ae60 !important;
+}
+
+.btn-mode:hover {
+  background-color: #229954 !important;
+}
+
+/* 保存ボタン（オレンジ系、アクティブ時は赤系） */
+.btn-save {
+  background-color: #f39c12 !important;
+}
+
+.btn-save:hover {
+  background-color: #e67e22 !important;
+}
+
+.btn-save:disabled {
+  background-color: #bdc3c7 !important;
+  opacity: 0.6;
+}
+
+.btn-save:disabled:hover {
+  background-color: #bdc3c7 !important;
+}
+
+/* モードセレクター */
+.mode-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.mode-status {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 2px solid;
+  transition: all 0.3s ease;
+  user-select: none;
+  cursor: pointer;
+  background: none;
+}
+
+.mode-status.view-mode {
+  background-color: #e8f5e8;
+  color: #27ae60;
+  border-color: #27ae60;
+}
+
+.mode-status.view-mode:hover {
+  background-color: #d4edda;
+}
+
+.mode-status.edit-mode {
+  background-color: #fff3e0;
+  color: #f39c12;
+  border-color: #f39c12;
+  animation: editModeGlow 2s infinite;
+}
+
+.mode-status.edit-mode:hover {
+  background-color: #ffe8cc;
+}
+
+@keyframes editModeGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(243, 156, 18, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
+  }
+}
+
+/* モードドロップダウン */
+.mode-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 1000;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.mode-option {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #f1f2f6;
+  transition: all 0.2s ease;
+}
+
+.mode-option:hover {
+  background-color: #f8f9fa;
+  color: #3498db;
+}
+
+.mode-option:last-child {
+  border-bottom: none;
+}
+
+.mode-option.active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: 600;
 }
 
 .save-button-active {
@@ -239,15 +408,10 @@ body {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
-  background-color: #3498db;
   color: white;
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.2s;
-}
-
-.recent-files-button:hover {
-  background-color: #2980b9;
 }
 
 .recent-files-dropdown {
@@ -255,13 +419,14 @@ body {
   top: 100%;
   left: 0;
   background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  min-width: 250px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
   max-width: 400px;
   z-index: 1000;
-  margin-top: 4px;
+  margin-top: 8px;
+  overflow: hidden;
 }
 
 .recent-file-item {
@@ -269,17 +434,19 @@ body {
   width: 100%;
   padding: 0.75rem 1rem;
   border: none;
-  background: none;
+  background: white;
   text-align: left;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  transition: background-color 0.2s;
+  color: #2c3e50;
+  border-bottom: 1px solid #f1f2f6;
+  transition: all 0.2s ease;
 }
 
 .recent-file-item:hover {
   background-color: #f8f9fa;
+  color: #3498db;
+  padding-left: 1.25rem;
 }
 
 .recent-file-item:last-child {
@@ -287,9 +454,96 @@ body {
 }
 
 .no-recent-files {
-  padding: 1rem;
-  color: #666;
+  padding: 1.5rem 1rem;
+  color: #95a5a6;
   font-size: 0.9rem;
   text-align: center;
   font-style: italic;
+  background: white;
+}
+
+/* 空状態のスタイル */
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 60vh;
+}
+
+.empty-state-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 2rem;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-state h2 {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.empty-state p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state .empty-action-btn {
+  font-size: 1.1rem !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 8px !important;
+  color: white !important;
+  background-color: #3498db !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2) !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  min-width: 180px !important;
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.empty-state .empty-action-btn:hover {
+  background-color: #2980b9 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px rgba(52, 152, 219, 0.3) !important;
+}
+
+/* 空状態の最近開いたファイルメニューのスタイル調整 */
+.empty-state .recent-files-button {
+  font-size: 1.1rem !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2) !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  min-width: 200px !important;
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.empty-state .recent-files-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px rgba(52, 152, 219, 0.3) !important;
 }

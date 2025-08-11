@@ -44,9 +44,9 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
     <div className="recent-files-menu" ref={menuRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="recent-files-button"
+        className="recent-files-button btn-file"
       >
-        最近開いたファイル ▼
+        🕒 最近開いたファイル {isOpen ? '▲' : '▼'}
       </button>
       
       {isOpen && (
