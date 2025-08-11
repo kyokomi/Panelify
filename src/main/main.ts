@@ -12,13 +12,10 @@ const MAX_RECENT_FILES = 5;
 
 function updateRecentFiles(filePath: string) {
   const recentFiles = store.get("recentFiles", []) as string[];
-  // 既存のエントリを削除
-  const filtered = recentFiles.filter((f) => f !== filePath);
-  // 先頭に追加
-  filtered.unshift(filePath);
-  // 最大数に制限
-  const limited = filtered.slice(0, MAX_RECENT_FILES);
-  store.set("recentFiles", limited);
+  const filteredFiles = recentFiles.filter((existingPath) => existingPath !== filePath);
+  filteredFiles.unshift(filePath);
+  const limitedFiles = filteredFiles.slice(0, MAX_RECENT_FILES);
+  store.set("recentFiles", limitedFiles);
 
   // メニューを更新
   updateApplicationMenu();
@@ -41,59 +38,65 @@ function closeDashboard() {
   }
 }
 
-function updateApplicationMenu() {
+function createRecentFilesSubmenu(): MenuItemConstructorOptions[] {
   const recentFiles = store.get("recentFiles", []) as string[];
-  const existingFiles = recentFiles.filter((f) => fs.existsSync(f));
+  const existingFiles = recentFiles.filter((filePath) => fs.existsSync(filePath));
 
-  const recentFilesMenu = existingFiles.map((filePath) => ({
+  if (existingFiles.length === 0) {
+    return [{ label: "なし", enabled: false }];
+  }
+
+  return existingFiles.map((filePath) => ({
     label: getFileName(filePath),
     click: () => openRecentFile(filePath),
   }));
+}
 
-  const template: MenuItemConstructorOptions[] = [];
+function createAppSubmenu(): MenuItemConstructorOptions {
+  return {
+    label: app.getName(),
+    submenu: [
+      { label: `${app.getName()}について`, role: "about" },
+      { type: "separator" as const },
+      { label: "サービス", role: "services", submenu: [] },
+      { type: "separator" as const },
+      { label: `${app.getName()}を隠す`, accelerator: "Command+H", role: "hide" },
+      { label: "他を隠す", accelerator: "Command+Shift+H", role: "hideOthers" },
+      { label: "すべて表示", role: "unhide" },
+      { type: "separator" as const },
+      { label: "終了", accelerator: "Command+Q", role: "quit" },
+    ],
+  };
+}
 
-  // macOS用のアプリケーションメニューを追加
-  if (process.platform === "darwin") {
-    template.push({
-      label: app.getName(),
-      submenu: [
-        { label: `${app.getName()}について`, role: "about" },
-        { type: "separator" as const },
-        { label: "サービス", role: "services", submenu: [] },
-        { type: "separator" as const },
-        { label: `${app.getName()}を隠す`, accelerator: "Command+H", role: "hide" },
-        { label: "他を隠す", accelerator: "Command+Shift+H", role: "hideOthers" },
-        { label: "すべて表示", role: "unhide" },
-        { type: "separator" as const },
-        { label: "終了", accelerator: "Command+Q", role: "quit" },
-      ],
-    });
-  }
+function createFileSubmenu(): MenuItemConstructorOptions {
+  const recentFilesSubmenu = createRecentFilesSubmenu();
+  const quitMenuItem =
+    process.platform === "darwin" ? [] : [{ label: "終了", accelerator: "Ctrl+Q", role: "quit" as const }];
 
-  // ファイルメニュー
-  template.push({
+  return {
     label: "ファイル",
     submenu: [
       {
         label: "Markdownファイルを開く...",
         accelerator: "CmdOrCtrl+O",
         click: async () => {
-          const result = await dialog.showOpenDialog({
+          const fileDialogResult = await dialog.showOpenDialog({
             properties: ["openFile"],
             filters: [{ name: "Markdown", extensions: ["md"] }],
             defaultPath: "/Users/kyokomi/Obsidian/main",
           });
 
-          if (!result.canceled && result.filePaths.length > 0) {
-            const filePath = result.filePaths[0];
-            openRecentFile(filePath);
+          if (!fileDialogResult.canceled && fileDialogResult.filePaths.length > 0) {
+            const selectedFilePath = fileDialogResult.filePaths[0];
+            openRecentFile(selectedFilePath);
           }
         },
       },
       { type: "separator" as const },
       {
         label: "最近開いたファイル",
-        submenu: recentFilesMenu.length > 0 ? recentFilesMenu : [{ label: "なし", enabled: false }],
+        submenu: recentFilesSubmenu,
       },
       { type: "separator" as const },
       {
@@ -102,19 +105,23 @@ function updateApplicationMenu() {
         click: () => closeDashboard(),
       },
       { type: "separator" as const },
-      ...(process.platform === "darwin" ? [] : [{ label: "終了", accelerator: "Ctrl+Q", role: "quit" as const }]),
+      ...quitMenuItem,
     ],
-  });
+  };
+}
 
-  // 表示メニュー
-  template.push({
+function createViewSubmenu(): MenuItemConstructorOptions {
+  const devToolsAccelerator = process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I";
+  const fullscreenAccelerator = process.platform === "darwin" ? "Ctrl+Command+F" : "F11";
+
+  return {
     label: "表示",
     submenu: [
       { label: "再読み込み", accelerator: "CmdOrCtrl+R", role: "reload" },
       { label: "強制再読み込み", accelerator: "CmdOrCtrl+Shift+R", role: "forceReload" },
       {
         label: "開発者ツールを切り替え",
-        accelerator: process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I",
+        accelerator: devToolsAccelerator,
         role: "toggleDevTools",
       },
       { type: "separator" as const },
@@ -124,31 +131,36 @@ function updateApplicationMenu() {
       { type: "separator" as const },
       {
         label: "全画面表示の切り替え",
-        accelerator: process.platform === "darwin" ? "Ctrl+Command+F" : "F11",
+        accelerator: fullscreenAccelerator,
         role: "togglefullscreen",
       },
     ],
-  });
+  };
+}
 
-  // ウィンドウメニュー
-  template.push({
+function createWindowSubmenu(): MenuItemConstructorOptions {
+  const macOSSpecificItems =
+    process.platform === "darwin"
+      ? [
+          { type: "separator" as const },
+          { label: "前面に表示", role: "front" as const },
+          { type: "separator" as const },
+          { label: "Window", role: "window" as const },
+        ]
+      : [];
+
+  return {
     label: "ウィンドウ",
     submenu: [
       { label: "最小化", accelerator: "CmdOrCtrl+M", role: "minimize" },
       { label: "閉じる", accelerator: "CmdOrCtrl+W", role: "close" },
-      ...(process.platform === "darwin"
-        ? [
-            { type: "separator" as const },
-            { label: "前面に表示", role: "front" as const },
-            { type: "separator" as const },
-            { label: "Window", role: "window" as const },
-          ]
-        : []),
+      ...macOSSpecificItems,
     ],
-  });
+  };
+}
 
-  // ヘルプメニュー
-  template.push({
+function createHelpSubmenu(): MenuItemConstructorOptions {
+  return {
     label: "ヘルプ",
     submenu: [
       {
@@ -159,10 +171,20 @@ function updateApplicationMenu() {
         },
       },
     ],
-  });
+  };
+}
 
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+function updateApplicationMenu() {
+  const menuTemplate: MenuItemConstructorOptions[] = [];
+
+  if (process.platform === "darwin") {
+    menuTemplate.push(createAppSubmenu());
+  }
+
+  menuTemplate.push(createFileSubmenu(), createViewSubmenu(), createWindowSubmenu(), createHelpSubmenu());
+
+  const applicationMenu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(applicationMenu);
 }
 
 function createWindow() {
@@ -221,28 +243,27 @@ app.on("activate", () => {
 });
 
 ipcMain.handle("select-markdown-file", async () => {
-  const result = await dialog.showOpenDialog({
+  const fileDialogResult = await dialog.showOpenDialog({
     properties: ["openFile"],
     filters: [{ name: "Markdown", extensions: ["md"] }],
     defaultPath: "/Users/kyokomi/Obsidian/main",
   });
 
-  if (!result.canceled && result.filePaths.length > 0) {
-    const filePath = result.filePaths[0];
-    const content = fs.readFileSync(filePath, "utf-8");
-    // 最近開いたファイルリストを更新
-    updateRecentFiles(filePath);
-    return { filePath, content };
+  if (!fileDialogResult.canceled && fileDialogResult.filePaths.length > 0) {
+    const selectedFilePath = fileDialogResult.filePaths[0];
+    const fileContent = fs.readFileSync(selectedFilePath, "utf-8");
+    updateRecentFiles(selectedFilePath);
+    return { filePath: selectedFilePath, content: fileContent };
   }
   return null;
 });
 
 ipcMain.handle("read-markdown-file", async (event, filePath: string) => {
   try {
-    const content = fs.readFileSync(filePath, "utf-8");
-    return { success: true, content };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    return { success: true, content: fileContent };
+  } catch (readError) {
+    return { success: false, error: readError instanceof Error ? readError.message : String(readError) };
   }
 });
 
@@ -257,9 +278,9 @@ ipcMain.handle("save-layout-config", async (event, filePath: string, layoutConfi
 });
 
 ipcMain.handle("load-layout-config", async (event, filePath: string) => {
-  const configKey = `layout-${filePath}`;
-  const config = store.get(configKey);
-  return config || null;
+  const layoutConfigKey = `layout-${filePath}`;
+  const savedLayoutConfig = store.get(layoutConfigKey);
+  return savedLayoutConfig || null;
 });
 
 ipcMain.handle("get-last-opened-file", async () => {
@@ -272,11 +293,9 @@ ipcMain.handle("get-last-opened-file", async () => {
 
 ipcMain.handle("get-recent-files", async () => {
   const recentFiles = store.get("recentFiles", []) as string[];
-  // 存在するファイルのみフィルタ
-  const existing = recentFiles.filter((f) => fs.existsSync(f));
-  // リストが変わった場合は更新
-  if (existing.length !== recentFiles.length) {
-    store.set("recentFiles", existing);
+  const existingFiles = recentFiles.filter((filePath) => fs.existsSync(filePath));
+  if (existingFiles.length !== recentFiles.length) {
+    store.set("recentFiles", existingFiles);
   }
-  return existing;
+  return existingFiles;
 });

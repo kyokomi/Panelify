@@ -22,70 +22,65 @@ const App: React.FC = () => {
   const modeDropdownRef = useRef<HTMLDivElement>(null);
 
   const createDefaultLayout = (sections: MarkdownSection[]): LayoutItem[] => {
+    const COLUMNS_COUNT = 3;
+    const CELL_WIDTH = 4;
+    const CELL_HEIGHT = 6;
+    const MIN_CELL_WIDTH = 3;
+    const MIN_CELL_HEIGHT = 4;
+
     return sections.map((section, index) => ({
       i: section.id,
-      x: (index % 3) * 4, // 3列に配置
-      y: Math.floor(index / 3) * 6, // 行の高さを6に
-      w: 4, // 幅4（12グリッドの1/3）
-      h: 6, // 高さ6（見やすいサイズ）
-      minW: 3,
-      minH: 4,
+      x: (index % COLUMNS_COUNT) * CELL_WIDTH,
+      y: Math.floor(index / COLUMNS_COUNT) * CELL_HEIGHT,
+      w: CELL_WIDTH,
+      h: CELL_HEIGHT,
+      minW: MIN_CELL_WIDTH,
+      minH: MIN_CELL_HEIGHT,
     }));
   };
 
-  const loadFileFromPath = useCallback(async (filePath: string) => {
-    try {
-      const result = await window.electronAPI.readMarkdownFile(filePath);
-      if (result.success && result.content) {
-        const parsedSections = parseMarkdownSections(result.content);
+  const setupFileContent = useCallback(async (filePath: string, fileContent: string) => {
+    const parsedSections = parseMarkdownSections(fileContent);
+    setSections(parsedSections);
+    setCurrentFile(filePath);
 
-        setSections(parsedSections);
-        setCurrentFile(filePath);
+    const savedLayoutConfig = await window.electronAPI.loadLayoutConfig(filePath);
+    const layoutToUse =
+      savedLayoutConfig && Array.isArray(savedLayoutConfig)
+        ? (savedLayoutConfig as LayoutItem[])
+        : createDefaultLayout(parsedSections);
 
-        const savedLayoutConfig = await window.electronAPI.loadLayoutConfig(filePath);
-        if (savedLayoutConfig && Array.isArray(savedLayoutConfig)) {
-          setLayout(savedLayoutConfig as LayoutItem[]);
-          setSavedLayout(savedLayoutConfig as LayoutItem[]);
+    setLayout(layoutToUse);
+    setSavedLayout(layoutToUse);
+    setHasLayoutChanges(false);
+  }, []);
+
+  const loadFileFromPath = useCallback(
+    async (filePath: string) => {
+      try {
+        const fileReadResult = await window.electronAPI.readMarkdownFile(filePath);
+        if (fileReadResult.success && fileReadResult.content) {
+          await setupFileContent(filePath, fileReadResult.content);
         } else {
-          const defaultLayout = createDefaultLayout(parsedSections);
-          setLayout(defaultLayout);
-          setSavedLayout(defaultLayout);
+          setSnackbar({ open: true, message: "ファイルの読み込みに失敗しました" });
         }
-        setHasLayoutChanges(false);
-      } else {
+      } catch {
         setSnackbar({ open: true, message: "ファイルの読み込みに失敗しました" });
       }
-    } catch {
-      setSnackbar({ open: true, message: "ファイルの読み込みに失敗しました" });
-    }
-  }, []);
+    },
+    [setupFileContent],
+  );
 
   const loadLastOpenedFile = useCallback(async () => {
     try {
-      const lastFile = await window.electronAPI.getLastOpenedFile();
-      if (lastFile) {
-        const result = await window.electronAPI.readMarkdownFile(lastFile);
-        if (result.success && result.content) {
-          const parsedSections = parseMarkdownSections(result.content);
-          setSections(parsedSections);
-          setCurrentFile(lastFile);
-
-          const savedLayoutConfig = await window.electronAPI.loadLayoutConfig(lastFile);
-          if (savedLayoutConfig && Array.isArray(savedLayoutConfig)) {
-            setLayout(savedLayoutConfig as LayoutItem[]);
-            setSavedLayout(savedLayoutConfig as LayoutItem[]);
-          } else {
-            const defaultLayout = createDefaultLayout(parsedSections);
-            setLayout(defaultLayout);
-            setSavedLayout(defaultLayout);
-          }
-          setHasLayoutChanges(false);
-        }
+      const lastOpenedFilePath = await window.electronAPI.getLastOpenedFile();
+      if (lastOpenedFilePath) {
+        await loadFileFromPath(lastOpenedFilePath);
       }
     } catch {
       setSnackbar({ open: true, message: "前回のファイルの読み込みに失敗しました" });
     }
-  }, []);
+  }, [loadFileFromPath]);
 
   useEffect(() => {
     // 前回開いていたファイルを自動で開く
@@ -133,23 +128,9 @@ const App: React.FC = () => {
 
   const loadMarkdownFile = async () => {
     try {
-      const result = await window.electronAPI.selectMarkdownFile();
-      if (result && result.content) {
-        const parsedSections = parseMarkdownSections(result.content);
-
-        setSections(parsedSections);
-        setCurrentFile(result.filePath);
-
-        const savedLayoutConfig = await window.electronAPI.loadLayoutConfig(result.filePath);
-        if (savedLayoutConfig && Array.isArray(savedLayoutConfig)) {
-          setLayout(savedLayoutConfig as LayoutItem[]);
-          setSavedLayout(savedLayoutConfig as LayoutItem[]);
-        } else {
-          const defaultLayout = createDefaultLayout(parsedSections);
-          setLayout(defaultLayout);
-          setSavedLayout(defaultLayout);
-        }
-        setHasLayoutChanges(false);
+      const fileSelectionResult = await window.electronAPI.selectMarkdownFile();
+      if (fileSelectionResult && fileSelectionResult.content) {
+        await setupFileContent(fileSelectionResult.filePath, fileSelectionResult.content);
       }
     } catch {
       setSnackbar({ open: true, message: "ファイル選択に失敗しました" });
@@ -158,9 +139,8 @@ const App: React.FC = () => {
 
   const handleLayoutChange = (newLayout: LayoutItem[]) => {
     setLayout(newLayout);
-    // レイアウトが変更されたかチェック
-    const hasChanges = JSON.stringify(newLayout) !== JSON.stringify(savedLayout);
-    setHasLayoutChanges(hasChanges);
+    const hasLayoutModifications = JSON.stringify(newLayout) !== JSON.stringify(savedLayout);
+    setHasLayoutChanges(hasLayoutModifications);
   };
 
   const saveLayout = async () => {
@@ -177,34 +157,44 @@ const App: React.FC = () => {
     setIsModeDropdownOpen(false);
   };
 
+  const addNewSectionsToLayout = useCallback((newSections: MarkdownSection[], currentLayout: LayoutItem[]) => {
+    if (newSections.length === 0) return currentLayout;
+
+    const newSectionLayout = createDefaultLayout(newSections);
+    const maxYPosition = Math.max(...currentLayout.map((item) => item.y + item.h), 0);
+    const COLUMNS_COUNT = 3;
+    const CELL_HEIGHT = 6;
+
+    newSectionLayout.forEach((item, index) => {
+      item.y = maxYPosition + Math.floor(index / COLUMNS_COUNT) * CELL_HEIGHT;
+    });
+
+    return [...currentLayout, ...newSectionLayout];
+  }, []);
+
   const reloadCurrentFile = async () => {
-    if (!currentFile || isReloading) return;
+    if (!currentFile || isReloading) {
+      return;
+    }
 
     setIsReloading(true);
     try {
-      const result = await window.electronAPI.readMarkdownFile(currentFile);
-      if (result.success && result.content) {
-        const parsedSections = parseMarkdownSections(result.content);
-        setSections(parsedSections);
-
-        // 現在のレイアウトを保持（新しいセクションがある場合は追加）
-        const existingLayout = layout;
-        const existingIds = new Set(existingLayout.map((item) => item.i));
-        const newSections = parsedSections.filter((section) => !existingIds.has(section.id));
-
-        if (newSections.length > 0) {
-          // 新しいセクションのデフォルトレイアウトを作成
-          const newLayout = createDefaultLayout(newSections);
-          // 既存のレイアウトの最下部に配置
-          const maxY = Math.max(...existingLayout.map((item) => item.y + item.h), 0);
-          newLayout.forEach((item, index) => {
-            item.y = maxY + Math.floor(index / 3) * 6;
-          });
-          setLayout([...existingLayout, ...newLayout]);
-        }
-
-        setSnackbar({ open: true, message: "ファイルを再読み込みしました！" });
+      const fileReadResult = await window.electronAPI.readMarkdownFile(currentFile);
+      if (!fileReadResult.success || !fileReadResult.content) {
+        setSnackbar({ open: true, message: "ファイルの再読み込みに失敗しました" });
+        return;
       }
+
+      const updatedSections = parseMarkdownSections(fileReadResult.content);
+      setSections(updatedSections);
+
+      const existingItemIds = new Set(layout.map((item) => item.i));
+      const newSections = updatedSections.filter((section) => !existingItemIds.has(section.id));
+
+      const updatedLayout = addNewSectionsToLayout(newSections, layout);
+      setLayout(updatedLayout);
+
+      setSnackbar({ open: true, message: "ファイルを再読み込みしました！" });
     } catch {
       setSnackbar({ open: true, message: "ファイルの再読み込みに失敗しました" });
     } finally {
@@ -217,14 +207,12 @@ const App: React.FC = () => {
   };
 
   const closeDashboard = () => {
-    // ダッシュボードの状態をクリア
     setSections([]);
     setLayout([]);
     setCurrentFile("");
     setSavedLayout([]);
     setHasLayoutChanges(false);
     setIsEditMode(false);
-
     setSnackbar({ open: true, message: "ダッシュボードを閉じました" });
   };
 
