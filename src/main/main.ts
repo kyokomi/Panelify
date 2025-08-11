@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, Menu, MenuItemConstructorOptions } from "electron";
 import * as path from "path";
 import * as fs from "fs";
 import Store from "electron-store";
@@ -50,7 +50,7 @@ function updateApplicationMenu() {
     click: () => openRecentFile(filePath),
   }));
 
-  const template: any[] = [];
+  const template: MenuItemConstructorOptions[] = [];
 
   // macOS用のアプリケーションメニューを追加
   if (process.platform === "darwin") {
@@ -58,13 +58,13 @@ function updateApplicationMenu() {
       label: app.getName(),
       submenu: [
         { label: `${app.getName()}について`, role: "about" },
-        { type: "separator" },
+        { type: "separator" as const },
         { label: "サービス", role: "services", submenu: [] },
-        { type: "separator" },
+        { type: "separator" as const },
         { label: `${app.getName()}を隠す`, accelerator: "Command+H", role: "hide" },
-        { label: "他を隠す", accelerator: "Command+Shift+H", role: "hideothers" },
+        { label: "他を隠す", accelerator: "Command+Shift+H", role: "hideOthers" },
         { label: "すべて表示", role: "unhide" },
-        { type: "separator" },
+        { type: "separator" as const },
         { label: "終了", accelerator: "Command+Q", role: "quit" },
       ],
     });
@@ -90,19 +90,19 @@ function updateApplicationMenu() {
           }
         },
       },
-      { type: "separator" },
+      { type: "separator" as const },
       {
         label: "最近開いたファイル",
         submenu: recentFilesMenu.length > 0 ? recentFilesMenu : [{ label: "なし", enabled: false }],
       },
-      { type: "separator" },
+      { type: "separator" as const },
       {
         label: "ダッシュボードを閉じる",
         accelerator: "CmdOrCtrl+Shift+W",
         click: () => closeDashboard(),
       },
-      { type: "separator" },
-      ...(process.platform === "darwin" ? [] : [{ label: "終了", accelerator: "Ctrl+Q", role: "quit" }]),
+      { type: "separator" as const },
+      ...(process.platform === "darwin" ? [] : [{ label: "終了", accelerator: "Ctrl+Q", role: "quit" as const }]),
     ],
   });
 
@@ -117,11 +117,11 @@ function updateApplicationMenu() {
         accelerator: process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I",
         role: "toggleDevTools",
       },
-      { type: "separator" },
+      { type: "separator" as const },
       { label: "実際のサイズ", accelerator: "CmdOrCtrl+0", role: "resetZoom" },
       { label: "拡大", accelerator: "CmdOrCtrl+Plus", role: "zoomIn" },
       { label: "縮小", accelerator: "CmdOrCtrl+-", role: "zoomOut" },
-      { type: "separator" },
+      { type: "separator" as const },
       {
         label: "全画面表示の切り替え",
         accelerator: process.platform === "darwin" ? "Ctrl+Command+F" : "F11",
@@ -138,10 +138,10 @@ function updateApplicationMenu() {
       { label: "閉じる", accelerator: "CmdOrCtrl+W", role: "close" },
       ...(process.platform === "darwin"
         ? [
-            { type: "separator" },
-            { label: "前面に表示", role: "front" },
-            { type: "separator" },
-            { label: "Window", role: "window" },
+            { type: "separator" as const },
+            { label: "前面に表示", role: "front" as const },
+            { type: "separator" as const },
+            { label: "Window", role: "window" as const },
           ]
         : []),
     ],
@@ -173,15 +173,19 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
   const htmlPath = path.join(__dirname, "renderer/index.html");
-  console.log("Loading HTML file from:", htmlPath);
-  console.log("File exists:", fs.existsSync(htmlPath));
-
   const isDev = process.argv.includes("--dev");
+
+  if (isDev) {
+    // eslint-disable-next-line no-console
+    console.log("Loading HTML file from:", htmlPath);
+    // eslint-disable-next-line no-console
+    console.log("File exists:", fs.existsSync(htmlPath));
+  }
   if (isDev) {
     mainWindow.loadFile(htmlPath);
     mainWindow.webContents.openDevTools();
@@ -190,6 +194,7 @@ function createWindow() {
   }
 
   mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL) => {
+    // eslint-disable-next-line no-console
     console.error("Failed to load:", errorCode, errorDescription, validatedURL);
   });
 
@@ -241,7 +246,7 @@ ipcMain.handle("read-markdown-file", async (event, filePath: string) => {
   }
 });
 
-ipcMain.handle("save-layout-config", async (event, filePath: string, layoutConfig: any) => {
+ipcMain.handle("save-layout-config", async (event, filePath: string, layoutConfig: unknown) => {
   const configKey = `layout-${filePath}`;
   store.set(configKey, layoutConfig);
   // 最後に開いたファイルも保存

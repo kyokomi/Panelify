@@ -8,7 +8,7 @@ module.exports = [
     target: 'electron-main',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'main.js'
+      filename: 'main.cjs'
     },
     module: {
       rules: [
@@ -29,7 +29,7 @@ module.exports = [
     target: 'electron-preload',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'preload.js'
+      filename: 'preload.cjs'
     },
     module: {
       rules: [

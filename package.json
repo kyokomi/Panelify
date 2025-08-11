@@ -2,7 +2,7 @@
   "name": "panelify",
   "version": "1.0.0",
   "description": "Transform your Markdown files into beautiful grid-based dashboards",
-  "main": "dist/main.js",
+  "main": "dist/main.cjs",
   "type": "module",
   "scripts": {
     "build": "tsc && webpack",

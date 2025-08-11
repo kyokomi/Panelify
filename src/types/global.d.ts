@@ -1,12 +1,12 @@
 export interface IElectronAPI {
   selectMarkdownFile: () => Promise<{ filePath: string; content: string } | null>;
   readMarkdownFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
-  saveLayoutConfig: (filePath: string, layoutConfig: any) => Promise<{ success: boolean }>;
-  loadLayoutConfig: (filePath: string) => Promise<any>;
+  saveLayoutConfig: (filePath: string, layoutConfig: unknown) => Promise<{ success: boolean }>;
+  loadLayoutConfig: (filePath: string) => Promise<unknown>;
   getLastOpenedFile: () => Promise<string | null>;
   getRecentFiles: () => Promise<string[]>;
-  onOpenRecentFile?: (callback: (event: any, filePath: string) => void) => void;
-  onCloseDashboard?: (callback: (event: any) => void) => void;
+  onOpenRecentFile?: (callback: (event: unknown, filePath: string) => void) => void;
+  onCloseDashboard?: (callback: (event: unknown) => void) => void;
 }
 
 declare global {
