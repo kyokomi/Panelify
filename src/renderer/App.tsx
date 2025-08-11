@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import GridLayout from "react-grid-layout";
 import { marked } from "marked";
 import Snackbar from "./components/Snackbar";
 import RecentFilesMenu from "./components/RecentFilesMenu";
+import Button from "./components/Button";
+import Dropdown from "./components/Dropdown";
+import SaveButton from "./components/SaveButton";
 import { FileService } from "../services/FileService";
 import { LayoutService } from "../services/LayoutService";
 import { useFileManagement } from "../hooks/useFileManagement";
@@ -33,7 +36,6 @@ const App: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [containerWidth, setContainerWidth] = useState<number>(1200);
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState<boolean>(false);
-  const modeDropdownRef = useRef<HTMLDivElement>(null);
 
   const loadLastOpenedFile = useCallback(async () => {
     try {
@@ -98,17 +100,8 @@ const App: React.FC = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modeDropdownRef.current && !modeDropdownRef.current.contains(event.target as Node)) {
-        setIsModeDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       window.removeEventListener("resize", handleResize);
-      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [loadFileFromPath, handleCloseDashboard, loadLastOpenedFile]);
 
@@ -120,54 +113,41 @@ const App: React.FC = () => {
             {currentFile ? currentFile.split("/").pop()?.replace(".md", "") || "Dashboard" : "Dashboard"}
           </h1>
           {currentFile && (
-            <button
-              className="reload-icon"
+            <Button
+              variant="icon"
               onClick={handleReloadWithMessage}
               disabled={isReloading}
               title="ファイルを再読み込み"
+              className="reload-icon"
             >
               {isReloading ? "🔄" : "↻"}
-            </button>
+            </Button>
           )}
         </div>
         <div className="controls">
           {currentFile && (
             <>
-              <div className="mode-selector" ref={modeDropdownRef}>
-                <button
-                  className={`mode-status ${isEditMode ? "edit-mode" : "view-mode"}`}
-                  onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-                >
-                  {isEditMode ? "✏️ 編集モード" : "👁️ 閲覧モード"} ▼
-                </button>
+              <Dropdown
+                className="mode-selector"
+                dropdownClassName="mode-dropdown"
+                isControlled={true}
+                isOpen={isModeDropdownOpen}
+                onToggle={setIsModeDropdownOpen}
+                trigger={
+                  <button className={`mode-status ${isEditMode ? "edit-mode" : "view-mode"}`}>
+                    {isEditMode ? "✏️ 編集モード" : "👁️ 閲覧モード"} ▼
+                  </button>
+                }
+              >
+                <Button variant="menu-item" active={!isEditMode} onClick={() => handleModeSelect("view")}>
+                  👁️ 閲覧モード {!isEditMode && "✓"}
+                </Button>
+                <Button variant="menu-item" active={isEditMode} onClick={() => handleModeSelect("edit")}>
+                  ✏️ 編集モード {isEditMode && "✓"}
+                </Button>
+              </Dropdown>
 
-                {isModeDropdownOpen && (
-                  <div className="mode-dropdown">
-                    <button
-                      className={`mode-option ${!isEditMode ? "active" : ""}`}
-                      onClick={() => handleModeSelect("view")}
-                    >
-                      👁️ 閲覧モード {!isEditMode && "✓"}
-                    </button>
-                    <button
-                      className={`mode-option ${isEditMode ? "active" : ""}`}
-                      onClick={() => handleModeSelect("edit")}
-                    >
-                      ✏️ 編集モード {isEditMode && "✓"}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {isEditMode && (
-                <button
-                  className={`btn-save ${hasLayoutChanges ? "save-button-active" : "save-button-disabled"}`}
-                  onClick={handleLayoutSave}
-                  disabled={!hasLayoutChanges}
-                >
-                  💾 レイアウト保存{hasLayoutChanges && " *"}
-                </button>
-              )}
+              {isEditMode && <SaveButton onClick={handleLayoutSave} hasChanges={hasLayoutChanges} />}
             </>
           )}
         </div>
@@ -180,9 +160,9 @@ const App: React.FC = () => {
               <h2>ダッシュボードが空です</h2>
               <p>Markdownファイルを開いてダッシュボードを表示しましょう</p>
               <div className="empty-state-actions">
-                <button className="btn-file empty-action-btn" onClick={loadMarkdownFile}>
+                <Button variant="file" onClick={loadMarkdownFile} className="empty-action-btn">
                   📂 ファイルを開く
-                </button>
+                </Button>
                 <RecentFilesMenu onFileSelect={handleRecentFileSelect} />
               </div>
             </div>
