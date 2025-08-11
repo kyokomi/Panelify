@@ -46,7 +46,7 @@
     "react-grid-layout": "^1.4.4"
   },
   "build": {
-    "appId": "com.kyokomi.panelify",
+    "appId": "dev.kyokomi.panelify",
     "productName": "Panelify",
     "directories": {
       "output": "release"
