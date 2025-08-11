@@ -19,6 +19,7 @@ jobs:
 
       - name: Extract version from tag
         id: extract_version
+        shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Install Node.js
