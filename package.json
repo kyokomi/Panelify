@@ -17,7 +17,10 @@
     "dashboard",
     "markdown"
   ],
-  "author": "kyokomi",
+  "author": {
+    "name": "kyokomi",
+    "email": "email@kyokomi.dev"
+  },
   "license": "MIT",
   "devDependencies": {
     "@types/marked": "^6.0.0",
