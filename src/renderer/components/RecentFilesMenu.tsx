@@ -11,8 +11,8 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
 
   useEffect(() => {
     const loadRecentFiles = async () => {
-      const files = await window.electronAPI.getRecentFiles();
-      setRecentFiles(files);
+      const recentFilesList = await window.electronAPI.getRecentFiles();
+      setRecentFiles(recentFilesList);
     };
 
     if (isOpen) {
@@ -36,7 +36,7 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
     setIsOpen(false);
   };
 
-  const getFileName = (filePath: string) => {
+  const extractFileNameFromPath = (filePath: string) => {
     return filePath.split("/").pop()?.replace(".md", "") || "Unknown";
   };
 
@@ -58,7 +58,7 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
                 className="recent-file-item"
                 title={filePath}
               >
-                {getFileName(filePath)}
+                {extractFileNameFromPath(filePath)}
               </button>
             ))
           )}
