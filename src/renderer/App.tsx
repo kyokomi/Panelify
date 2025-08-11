@@ -24,20 +24,20 @@ const App: React.FC = () => {
   useEffect(() => {
     // 前回開いていたファイルを自動で開く
     loadLastOpenedFile();
-    
+
     // メニューからのファイル選択を監視
     const handleOpenRecentFile = (event: any, filePath: string) => {
       loadFileFromPath(filePath);
     };
-    
+
     // メニューからのダッシュボードを閉じる処理を監視
     const handleCloseDashboard = (event: any) => {
       closeDashboard();
     };
-    
+
     window.electronAPI.onOpenRecentFile?.(handleOpenRecentFile);
     window.electronAPI.onCloseDashboard?.(handleCloseDashboard);
-    
+
     // リサイズ監視
     const handleResize = () => {
       const mainElement = document.querySelector('.main') as HTMLElement;
@@ -45,10 +45,10 @@ const App: React.FC = () => {
         setContainerWidth(mainElement.clientWidth - 32); // パディング分を引く (1rem x 2)
       }
     };
-    
+
     handleResize(); // 初期実行
     window.addEventListener('resize', handleResize);
-    
+
     // モードドロップダウンのクリックアウトサイド処理
     const handleClickOutside = (event: MouseEvent) => {
       if (modeDropdownRef.current && !modeDropdownRef.current.contains(event.target as Node)) {
@@ -71,10 +71,10 @@ const App: React.FC = () => {
       if (result.success && result.content) {
         console.log('Loading file:', filePath);
         console.log('File content length:', result.content.length);
-        
+
         const parsedSections = parseMarkdownSections(result.content);
         console.log('Parsed sections:', parsedSections);
-        
+
         setSections(parsedSections);
         setCurrentFile(filePath);
 
@@ -104,10 +104,10 @@ const App: React.FC = () => {
       if (result && result.content) {
         console.log('Selected file:', result.filePath);
         console.log('File content length:', result.content.length);
-        
+
         const parsedSections = parseMarkdownSections(result.content);
         console.log('Parsed sections:', parsedSections);
-        
+
         setSections(parsedSections);
         setCurrentFile(result.filePath);
 
@@ -196,7 +196,7 @@ const App: React.FC = () => {
 
   const reloadCurrentFile = async () => {
     if (!currentFile || isReloading) return;
-    
+
     setIsReloading(true);
     try {
       const result = await window.electronAPI.readMarkdownFile(currentFile);
@@ -204,12 +204,12 @@ const App: React.FC = () => {
         console.log('Reloading file:', currentFile);
         const parsedSections = parseMarkdownSections(result.content);
         setSections(parsedSections);
-        
+
         // 現在のレイアウトを保持（新しいセクションがある場合は追加）
         const existingLayout = layout;
         const existingIds = new Set(existingLayout.map(item => item.i));
         const newSections = parsedSections.filter(section => !existingIds.has(section.id));
-        
+
         if (newSections.length > 0) {
           // 新しいセクションのデフォルトレイアウトを作成
           const newLayout = createDefaultLayout(newSections);
@@ -220,7 +220,7 @@ const App: React.FC = () => {
           });
           setLayout([...existingLayout, ...newLayout]);
         }
-        
+
         setSnackbar({ open: true, message: 'ファイルを再読み込みしました！' });
       }
     } catch (error) {
@@ -243,7 +243,7 @@ const App: React.FC = () => {
     setSavedLayout([]);
     setHasLayoutChanges(false);
     setIsEditMode(false);
-    
+
     setSnackbar({ open: true, message: 'ダッシュボードを閉じました' });
   };
 
@@ -252,13 +252,13 @@ const App: React.FC = () => {
       <header className="header">
         <div className="header-left">
           <h1 title={currentFile || 'ファイルが開かれていません'}>
-            {currentFile ? 
-              currentFile.split('/').pop()?.replace('.md', '') || 'Dashboard' 
+            {currentFile ?
+              currentFile.split('/').pop()?.replace('.md', '') || 'Dashboard'
               : 'Dashboard'}
           </h1>
           {currentFile && (
-            <button 
-              className="reload-icon" 
+            <button
+              className="reload-icon"
               onClick={reloadCurrentFile}
               disabled={isReloading}
               title="ファイルを再読み込み"
@@ -271,13 +271,13 @@ const App: React.FC = () => {
           {currentFile && (
             <>
               <div className="mode-selector" ref={modeDropdownRef}>
-                <button 
+                <button
                   className={`mode-status ${isEditMode ? 'edit-mode' : 'view-mode'}`}
                   onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
                 >
                   {isEditMode ? '✏️ 編集モード' : '👁️ 閲覧モード'} ▼
                 </button>
-                
+
                 {isModeDropdownOpen && (
                   <div className="mode-dropdown">
                     <button
@@ -295,9 +295,9 @@ const App: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               {isEditMode && (
-                <button 
+                <button
                   className={`btn-save ${hasLayoutChanges ? 'save-button-active' : 'save-button-disabled'}`}
                   onClick={saveLayout}
                   disabled={!hasLayoutChanges}
@@ -338,7 +338,7 @@ const App: React.FC = () => {
             {sections.map((section) => (
               <div key={section.id} className="grid-item">
                 <h3>{section.title}</h3>
-                <div 
+                <div
                   className="content"
                   dangerouslySetInnerHTML={{ __html: marked(section.content) }}
                 />

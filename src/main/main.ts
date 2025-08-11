@@ -19,7 +19,7 @@ function updateRecentFiles(filePath: string) {
   // 最大数に制限
   const limited = filtered.slice(0, MAX_RECENT_FILES);
   store.set('recentFiles', limited);
-  
+
   // メニューを更新
   updateApplicationMenu();
 }
@@ -44,7 +44,7 @@ function closeDashboard() {
 function updateApplicationMenu() {
   const recentFiles = store.get('recentFiles', []) as string[];
   const existingFiles = recentFiles.filter(f => fs.existsSync(f));
-  
+
   const recentFilesMenu = existingFiles.map(filePath => ({
     label: getFileName(filePath),
     click: () => openRecentFile(filePath)
@@ -193,7 +193,7 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-  
+
   // メニューを初期化
   updateApplicationMenu();
 }

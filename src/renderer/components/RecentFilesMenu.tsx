@@ -14,7 +14,7 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
       const files = await window.electronAPI.getRecentFiles();
       setRecentFiles(files);
     };
-    
+
     if (isOpen) {
       loadRecentFiles();
     }
@@ -42,13 +42,13 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
 
   return (
     <div className="recent-files-menu" ref={menuRef}>
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="recent-files-button btn-file"
       >
         🕒 最近開いたファイル {isOpen ? '▲' : '▼'}
       </button>
-      
+
       {isOpen && (
         <div className="recent-files-dropdown">
           {recentFiles.length === 0 ? (
