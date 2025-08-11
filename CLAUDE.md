@@ -27,6 +27,15 @@ npm run dev
 
 # TypeScript監視モード
 npm run watch
+
+# コードフォーマット（Prettier）
+npm run fmt
+
+# コードリント（ESLint）
+npm run lint
+
+# コードリント自動修正（ESLint）
+npm run lint:fix
 ```
 
 ## 主要機能とファイル構成
@@ -78,3 +87,19 @@ Main Processで以下のハンドラーを実装:
 - コミット前に.editorconfigルールに違反していないか確認
 - エディタの設定で.editorconfigプラグインを有効化推奨
 - 自動整形ツールの活用を推奨
+
+## コード品質管理
+
+### ESLint設定
+- TypeScript + React + React Hooks対応
+- 推奨ルールセット適用
+- console.logは警告レベル（開発時は許可）
+- any型の使用は警告レベル
+- 未使用変数は警告レベル
+
+### 開発フロー推奨
+1. コード修正
+2. `npm run fmt` でフォーマット
+3. `npm run lint` でリント確認
+4. `npm run lint:fix` で自動修正可能な問題を解決
+5. 手動で残りの問題を修正
