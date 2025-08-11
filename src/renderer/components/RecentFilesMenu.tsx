@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 interface RecentFilesMenuProps {
   onFileSelect: (filePath: string) => void;
@@ -27,8 +27,8 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleFileSelect = (filePath: string) => {
@@ -37,16 +37,13 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
   };
 
   const getFileName = (filePath: string) => {
-    return filePath.split('/').pop()?.replace('.md', '') || 'Unknown';
+    return filePath.split("/").pop()?.replace(".md", "") || "Unknown";
   };
 
   return (
     <div className="recent-files-menu" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="recent-files-button btn-file"
-      >
-        🕒 最近開いたファイル {isOpen ? '▲' : '▼'}
+      <button onClick={() => setIsOpen(!isOpen)} className="recent-files-button btn-file">
+        🕒 最近開いたファイル {isOpen ? "▲" : "▼"}
       </button>
 
       {isOpen && (
