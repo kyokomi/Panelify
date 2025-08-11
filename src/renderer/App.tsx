@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import GridLayout from "react-grid-layout";
-import { marked } from "marked";
 import Snackbar from "./components/Snackbar";
 import RecentFilesMenu from "./components/RecentFilesMenu";
 import Button from "./components/Button";
 import Dropdown from "./components/Dropdown";
 import SaveButton from "./components/SaveButton";
+import EmptyState from "./components/EmptyState";
+import MarkdownContent from "./components/MarkdownContent";
+import { extractFileNameFromPath } from "./utils/fileUtils";
 import { FileService } from "../services/FileService";
 import { LayoutService } from "../services/LayoutService";
 import { useFileManagement } from "../hooks/useFileManagement";
@@ -110,7 +112,7 @@ const App: React.FC = () => {
       <header className="header">
         <div className="header-left">
           <h1 title={currentFile || "ファイルが開かれていません"}>
-            {currentFile ? currentFile.split("/").pop()?.replace(".md", "") || "Dashboard" : "Dashboard"}
+            {currentFile ? extractFileNameFromPath(currentFile) || "Dashboard" : "Dashboard"}
           </h1>
           {currentFile && (
             <Button
@@ -154,19 +156,16 @@ const App: React.FC = () => {
       </header>
       <main className="main">
         {sections.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-content">
-              <div className="empty-state-icon">📊</div>
-              <h2>ダッシュボードが空です</h2>
-              <p>Markdownファイルを開いてダッシュボードを表示しましょう</p>
-              <div className="empty-state-actions">
-                <Button variant="file" onClick={loadMarkdownFile} className="empty-action-btn">
-                  📂 ファイルを開く
-                </Button>
-                <RecentFilesMenu onFileSelect={handleRecentFileSelect} />
-              </div>
-            </div>
-          </div>
+          <EmptyState
+            icon="📊"
+            title="ダッシュボードが空です"
+            description="Markdownファイルを開いてダッシュボードを表示しましょう"
+          >
+            <Button variant="file" onClick={loadMarkdownFile} className="empty-action-btn">
+              📂 ファイルを開く
+            </Button>
+            <RecentFilesMenu onFileSelect={handleRecentFileSelect} />
+          </EmptyState>
         ) : (
           <GridLayout
             className="layout"
@@ -181,7 +180,7 @@ const App: React.FC = () => {
             {sections.map((section) => (
               <div key={section.id} className="grid-item">
                 <h3>{section.title}</h3>
-                <div className="content" dangerouslySetInnerHTML={{ __html: marked(section.content) }} />
+                <MarkdownContent content={section.content} className="content" />
               </div>
             ))}
           </GridLayout>

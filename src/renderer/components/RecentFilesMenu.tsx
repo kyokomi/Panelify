@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
 import Dropdown from "./Dropdown";
+import { extractFileNameFromPath } from "../utils/fileUtils";
 
 interface RecentFilesMenuProps {
   onFileSelect: (filePath: string) => void;
@@ -24,10 +25,6 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
   const handleFileSelect = (filePath: string) => {
     onFileSelect(filePath);
     setIsOpen(false);
-  };
-
-  const extractFileNameFromPath = (filePath: string) => {
-    return filePath.split("/").pop()?.replace(".md", "") || "Unknown";
   };
 
   return (
