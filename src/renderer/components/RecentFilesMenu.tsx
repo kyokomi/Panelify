@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import Button from "./Button";
+import Dropdown from "./Dropdown";
+import { extractFileNameFromPath } from "../utils/fileUtils";
 
 interface RecentFilesMenuProps {
   onFileSelect: (filePath: string) => void;
@@ -7,7 +10,6 @@ interface RecentFilesMenuProps {
 const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [recentFiles, setRecentFiles] = useState<string[]>([]);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadRecentFiles = async () => {
@@ -20,51 +22,40 @@ const RecentFilesMenu: React.FC<RecentFilesMenuProps> = ({ onFileSelect }) => {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleFileSelect = (filePath: string) => {
     onFileSelect(filePath);
     setIsOpen(false);
   };
 
-  const extractFileNameFromPath = (filePath: string) => {
-    return filePath.split("/").pop()?.replace(".md", "") || "Unknown";
-  };
-
   return (
-    <div className="recent-files-menu" ref={menuRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="recent-files-button btn-file">
-        🕒 最近開いたファイル {isOpen ? "▲" : "▼"}
-      </button>
-
-      {isOpen && (
-        <div className="recent-files-dropdown">
-          {recentFiles.length === 0 ? (
-            <div className="no-recent-files">最近開いたファイルがありません</div>
-          ) : (
-            recentFiles.map((filePath, index) => (
-              <button
-                key={index}
-                onClick={() => handleFileSelect(filePath)}
-                className="recent-file-item"
-                title={filePath}
-              >
-                {extractFileNameFromPath(filePath)}
-              </button>
-            ))
-          )}
-        </div>
+    <Dropdown
+      className="recent-files-menu"
+      dropdownClassName="recent-files-dropdown"
+      isControlled={true}
+      isOpen={isOpen}
+      onToggle={setIsOpen}
+      trigger={
+        <Button variant="file" className="recent-files-button">
+          🕒 最近開いたファイル {isOpen ? "▲" : "▼"}
+        </Button>
+      }
+    >
+      {recentFiles.length === 0 ? (
+        <div className="no-recent-files">最近開いたファイルがありません</div>
+      ) : (
+        recentFiles.map((filePath, index) => (
+          <Button
+            key={index}
+            variant="menu-item"
+            onClick={() => handleFileSelect(filePath)}
+            title={filePath}
+            className="recent-file-item"
+          >
+            {extractFileNameFromPath(filePath)}
+          </Button>
+        ))
       )}
-    </div>
+    </Dropdown>
   );
 };
 
